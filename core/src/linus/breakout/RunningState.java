@@ -27,16 +27,20 @@ public class RunningState extends State{
             racketHeight = 10,
             racketY = 30,
             borderStrength = 6,
-            ballSize = 6;
+            ballSize = 6,
+            racketWidth;
 
     protected final float
-            racketSpeed = 500;
+            racketSpeed = 750,
+            ballSpeed = 5,
+            halfBallSize = ballSize / 2f,
+            halfRacketWidth;
 
-    protected Vector2
+    protected boolean running = false;
+
+    protected final Vector2
+        racketDirection = Vector2.Zero,
         ballDirection = Vector2.Zero;
-
-    private int racketWidth;
-    private float halfRacketWidth;
 
     public RunningState(int useRacketWidth){
         super(175, 236);
@@ -57,15 +61,16 @@ public class RunningState extends State{
         borderTopSprite.setBounds(0, height - borderStrength, width, borderStrength);
 
         racketSprite = new Sprite(new Texture("racket.png"));
-        racketSprite.setBounds((width / 2f) - (racketWidth / 2f), racketY, racketWidth, racketHeight);
+        racketSprite.setBounds(halfWidth - halfRacketWidth, racketY, racketWidth, racketHeight);
 
         ballSprite = new Sprite(new Texture("ball.png"));
-        ballSprite.setBounds((width / 2f) - (ballSize - 2f), racketY + racketHeight + (ballSize / 2f), ballSize, ballSize);
+        ballSprite.setBounds(halfWidth - halfBallSize, racketY + racketHeight, ballSize, ballSize);
     }
 
     @Override
     public void render(SpriteBatch batch, Camera cam, float delta) {
         updateRacket(delta);
+        updateBall(delta);
         super.render(batch, cam, delta);
         borderLeftSprite.draw(batch);
         borderRightSprite.draw(batch);
@@ -74,7 +79,7 @@ public class RunningState extends State{
         ballSprite.draw(batch);
     }
 
-    private void updateRacket(float delta){
+    protected void updateRacket(float delta){
         if(!Gdx.input.isTouched())
             return;
 
@@ -82,13 +87,31 @@ public class RunningState extends State{
         float old = racketSprite.getX() + halfRacketWidth;
         float newValue;
 
-        if(touch < old)
-            newValue = old - (racketSpeed * delta);
-        else if(touch > old)
-            newValue = old + (racketSpeed * delta);
-        else
+        float speed = racketSpeed * delta;
+
+        if(touch < old){
+            float withSpeed = old - speed;
+            newValue = withSpeed > touch ? withSpeed : touch;
+            racketDirection.set(-1, 0);
+        }else if(touch > old){
+            float withSpeed = old + speed;
+            newValue = withSpeed < touch ? withSpeed : touch;
+            racketDirection.set(1, 0);
+        }else {
             return;
+        }
+
+        if(!running){
+            ballDirection.y = MathUtils.random(1);
+            ballDirection.x = MathUtils.random(-1, 1);
+            running = true;
+        }
 
         racketSprite.setCenterX(newValue);
+    }
+
+    protected void updateBall(float delta){
+        if(!running)
+            return;
     }
 }

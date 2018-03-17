@@ -12,7 +12,7 @@ import linus.breakout.RunningState;
 public class Level1 extends RunningState {
 
     public Level1(){
-        super(30);
+        super(50);
     }
 
     @Override
