@@ -5,63 +5,90 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector;
+import com.badlogic.gdx.math.Vector2;
 
 /**
  * Created by Linus on 15.03.2018.
  */
-public class RunningState extends State {
+public class RunningState extends State{
 
     protected final Sprite
             backgroundSprite,
             borderLeftSprite,
             borderRightSprite,
             borderTopSprite,
-            racketSprite;
+            racketSprite,
+            ballSprite;
 
     protected final int
-            racketHeight = 25,
+            racketHeight = 10,
             racketY = 30,
-            borderStrength = 6;
+            borderStrength = 6,
+            ballSize = 6;
 
-    protected final int racketWidth;
+    protected final float
+            racketSpeed = 500;
 
-    public RunningState(int racketWidth){
+    protected Vector2
+        ballDirection = Vector2.Zero;
+
+    private int racketWidth;
+    private float halfRacketWidth;
+
+    public RunningState(int useRacketWidth){
         super(175, 236);
 
-        this.racketWidth = racketWidth;
+        this.racketWidth = useRacketWidth;
+        this.halfRacketWidth = racketWidth / 2f;
 
         backgroundSprite = new Sprite(new Texture("background.png"));
-        backgroundSprite.setPosition(0, 0);
-        backgroundSprite.setSize(width, height);
+        backgroundSprite.setBounds(0, 0, width, height);
 
         borderLeftSprite = new Sprite(new Texture("border_left.png"));
-        borderLeftSprite.setPosition(0, 0);
-        borderLeftSprite.setSize(borderStrength, height - borderStrength);
+        borderLeftSprite.setBounds(0, 0, borderStrength, height - borderStrength);
 
         borderRightSprite = new Sprite(new Texture("border_right.png"));
-        borderRightSprite.setPosition(width - borderStrength, 0);
-        borderRightSprite.setSize(borderStrength, height - borderStrength);
+        borderRightSprite.setBounds(width - borderStrength, 0, borderStrength, height - borderStrength);
 
         borderTopSprite = new Sprite(new Texture("border_top.png"));
-        borderTopSprite.setPosition(0, height - borderStrength);
-        borderTopSprite.setSize(width, borderStrength);
+        borderTopSprite.setBounds(0, height - borderStrength, width, borderStrength);
 
         racketSprite = new Sprite(new Texture("racket.png"));
-        racketSprite.setPosition((width / 2f) - (racketWidth / 2f), racketY);
-        racketSprite.setSize(racketWidth, racketHeight);
+        racketSprite.setBounds((width / 2f) - (racketWidth / 2f), racketY, racketWidth, racketHeight);
+
+        ballSprite = new Sprite(new Texture("ball.png"));
+        ballSprite.setBounds((width / 2f) - (ballSize - 2f), racketY + racketHeight + (ballSize / 2f), ballSize, ballSize);
     }
 
     @Override
     public void render(SpriteBatch batch, Camera cam, float delta) {
-        updateRacket();
+        updateRacket(delta);
         super.render(batch, cam, delta);
         borderLeftSprite.draw(batch);
         borderRightSprite.draw(batch);
         borderTopSprite.draw(batch);
         racketSprite.draw(batch);
+        ballSprite.draw(batch);
     }
 
-    private void updateRacket(){
-        racketSprite.setPosition((Gdx.input.getX() - (racketWidth / 2f)) / 10f, racketY);
+    private void updateRacket(float delta){
+        if(!Gdx.input.isTouched())
+            return;
+
+        float touch = Utils.getInputX(width);
+        float old = racketSprite.getX() + halfRacketWidth;
+        float newValue;
+
+        if(touch < old)
+            newValue = old - (racketSpeed * delta);
+        else if(touch > old)
+            newValue = old + (racketSpeed * delta);
+        else
+            return;
+
+        racketSprite.setCenterX(newValue);
     }
 }

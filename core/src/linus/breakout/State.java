@@ -17,13 +17,20 @@ public abstract class State {
 
     protected final Sprite backgroundSprite;
 
-    protected final int width;
-    protected final int height;
+    protected final int
+            width,
+            height;
+
+    protected final float
+            halfWidth,
+            halfHeight;
 
     public State(int width, int height){
 
         this.width = width;
+        this.halfWidth = this.width / 2f;
         this.height = height;
+        this.halfHeight = this.height / 2f;
 
         backgroundSprite = new Sprite(new Texture("background.png"));
         backgroundSprite.setPosition(0, 0);
