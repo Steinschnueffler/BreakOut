@@ -43,4 +43,8 @@ public class Breakout extends ApplicationAdapter {
 	public void dispose() {
 		batch.dispose();
 	}
+
+	public static void setState(State s){
+		state = s;
+	}
 }

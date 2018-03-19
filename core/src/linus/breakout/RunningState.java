@@ -10,6 +10,10 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector;
 import com.badlogic.gdx.math.Vector2;
 
+import java.util.concurrent.TimeUnit;
+
+import linus.breakout.level.Level1;
+
 /**
  * Created by Linus on 15.03.2018.
  */
@@ -28,25 +32,29 @@ public class RunningState extends State{
             racketY = 30,
             borderStrength = 6,
             ballSize = 6,
-            racketWidth;
+            randomFactor = 20,
+            racketWidth,
+            ballSpeed;
 
     protected final float
             racketSpeed = 750,
-            ballSpeed = 5,
             halfBallSize = ballSize / 2f,
             halfRacketWidth;
 
-    protected boolean running = false;
-
     protected final Vector2
-        racketDirection = Vector2.Zero,
-        ballDirection = Vector2.Zero;
+        racketDirection = new Vector2(0, 0),
+        ballDirection = new Vector2(0, 0),
+        vecUp = Vector2.X,
+        vecLeft = Vector2.Y;
 
-    public RunningState(int useRacketWidth){
+    public RunningState(int useRacketWidth, int useBallSpeed){
         super(175, 236);
 
         this.racketWidth = useRacketWidth;
         this.halfRacketWidth = racketWidth / 2f;
+        this.ballSpeed = useBallSpeed;
+
+        ballDirection.set(0, -ballSpeed);
 
         backgroundSprite = new Sprite(new Texture("background.png"));
         backgroundSprite.setBounds(0, 0, width, height);
@@ -64,7 +72,7 @@ public class RunningState extends State{
         racketSprite.setBounds(halfWidth - halfRacketWidth, racketY, racketWidth, racketHeight);
 
         ballSprite = new Sprite(new Texture("ball.png"));
-        ballSprite.setBounds(halfWidth - halfBallSize, racketY + racketHeight, ballSize, ballSize);
+        ballSprite.setBounds(halfWidth - halfBallSize, halfHeight, ballSize, ballSize);
     }
 
     @Override
@@ -92,26 +100,57 @@ public class RunningState extends State{
         if(touch < old){
             float withSpeed = old - speed;
             newValue = withSpeed > touch ? withSpeed : touch;
-            racketDirection.set(-1, 0);
         }else if(touch > old){
             float withSpeed = old + speed;
             newValue = withSpeed < touch ? withSpeed : touch;
-            racketDirection.set(1, 0);
         }else {
             return;
         }
 
-        if(!running){
-            ballDirection.y = MathUtils.random(1);
-            ballDirection.x = MathUtils.random(-1, 1);
-            running = true;
-        }
-
+        racketDirection.set(touch - newValue, 0);
         racketSprite.setCenterX(newValue);
     }
 
     protected void updateBall(float delta){
-        if(!running)
+        float x = ballSprite.getX();
+        float y = ballSprite.getY();
+
+        if(
+                y - ballSize <= racketY &&
+                y -ballSize >= racketY - racketHeight &&
+                x >= racketSprite.getX() &&
+                x <= racketSprite.getX() + racketSprite.getWidth()
+            ){
+            float angle = ballDirection.angle(vecLeft);
+            ballDirection.rotate(360 - angle);
+            ballDirection.x += racketDirection.x * 5;
+            ballDirection.x += MathUtils.random(-randomFactor, randomFactor);
+        }
+
+        if(x <= borderStrength){
+            float angle = ballDirection.angle(vecUp);
+            ballDirection.rotate(180 - angle);
+        }
+
+        if(x >= width - borderStrength){
+            float angle = ballDirection.angle(vecUp);
+            ballDirection.rotate(180 + angle);
+        }
+
+        if(y + ballSize >= height - borderStrength){
+            float angle = ballDirection.angle(vecLeft);
+            ballDirection.rotate(180 + angle);
+        }
+
+        if(y < -ballSize){
+            Utils.sleepSeconds(2);
+            Breakout.setState(new Level1());
             return;
+        }
+
+        float newX = x + ballDirection.x * delta;
+        float newY = y + ballDirection.y * delta;
+        ballSprite.setPosition(newX, newY);
+
     }
 }
