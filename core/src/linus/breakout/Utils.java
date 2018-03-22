@@ -26,13 +26,4 @@ public class Utils {
         return map(Gdx.input.getX(), 0, Gdx.graphics.getWidth(), 0, width);
     }
 
-    public static void sleepSeconds(long seconds){
-        sleepMillis(TimeUnit.SECONDS.toMillis(seconds));
-    }
-
-    public static void sleepMillis(long millis){
-        long start = System.currentTimeMillis();
-        while(System.currentTimeMillis() - start < millis);
-    }
-
 }

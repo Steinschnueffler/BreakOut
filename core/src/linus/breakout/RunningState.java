@@ -5,12 +5,8 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector;
 import com.badlogic.gdx.math.Vector2;
-
-import java.util.concurrent.TimeUnit;
 
 import linus.breakout.level.Level1;
 
@@ -32,20 +28,24 @@ public class RunningState extends State{
             racketY = 30,
             borderStrength = 6,
             ballSize = 6,
-            randomFactor = 20,
+            randomFactor = 10,
             racketWidth,
-            ballSpeed;
+            racketSpeed = 750,
+            slowRacketSpeed = 50,
+            ballSpeed,
+            depthTimeout = 100;
 
     protected final float
-            racketSpeed = 750,
             halfBallSize = ballSize / 2f,
             halfRacketWidth;
 
     protected final Vector2
         racketDirection = new Vector2(0, 0),
         ballDirection = new Vector2(0, 0),
-        vecUp = Vector2.X,
-        vecLeft = Vector2.Y;
+        vecUp = new Vector2(1, 0),
+        vecRight = new Vector2(0, 1);
+
+    protected int depthFrameCounter = 0;
 
     public RunningState(int useRacketWidth, int useBallSpeed){
         super(175, 236);
@@ -76,10 +76,15 @@ public class RunningState extends State{
     }
 
     @Override
-    public void render(SpriteBatch batch, Camera cam, float delta) {
+    public void update(Camera cam, float delta) {
+        super.update(cam, delta);
         updateRacket(delta);
         updateBall(delta);
-        super.render(batch, cam, delta);
+    }
+
+    @Override
+    public void render(SpriteBatch batch) {
+        super.render(batch);
         borderLeftSprite.draw(batch);
         borderRightSprite.draw(batch);
         borderTopSprite.draw(batch);
@@ -93,59 +98,89 @@ public class RunningState extends State{
 
         float touch = Utils.getInputX(width);
         float old = racketSprite.getX() + halfRacketWidth;
+        float oldSlow = racketDirection.x;
         float newValue;
-
+        float newSlowValue;
         float speed = racketSpeed * delta;
+        float slowSpeed = slowRacketSpeed * delta;
 
         if(touch < old){
             float withSpeed = old - speed;
             newValue = withSpeed > touch ? withSpeed : touch;
+
+            float withSlowSpeed = oldSlow - slowSpeed;
+            newSlowValue = withSlowSpeed > touch ? withSlowSpeed : touch;
         }else if(touch > old){
             float withSpeed = old + speed;
             newValue = withSpeed < touch ? withSpeed : touch;
+
+            float withSlowSpeed = oldSlow + slowSpeed;
+            newSlowValue = withSlowSpeed < touch ? withSlowSpeed : touch;
+
         }else {
             return;
         }
 
-        racketDirection.set(touch - newValue, 0);
+        racketDirection.x = newSlowValue;
         racketSprite.setCenterX(newValue);
     }
 
     protected void updateBall(float delta){
+
+        if(depthFrameCounter > 0){
+            if(++depthFrameCounter == depthTimeout)
+                Breakout.setState(new Level1());
+            return;
+        }
+
         float x = ballSprite.getX();
         float y = ballSprite.getY();
 
+        //racket
         if(
                 y - ballSize <= racketY &&
                 y -ballSize >= racketY - racketHeight &&
                 x >= racketSprite.getX() &&
                 x <= racketSprite.getX() + racketSprite.getWidth()
             ){
-            float angle = ballDirection.angle(vecLeft);
-            ballDirection.rotate(360 - angle);
-            ballDirection.x += racketDirection.x * 5;
-            ballDirection.x += MathUtils.random(-randomFactor, randomFactor);
+
+            float rotation = 180;
+            float angle = ballDirection.angle(vecRight) * -1;
+
+            if(ballDirection.x < 0)
+                rotation = 180 - 2 * angle;
+            else if(ballDirection.x > 0)
+                rotation = 180 + 2 * angle;
+
+            ballDirection.rotate(rotation);
+            ballDirection.x += racketDirection.x;
+            ballDirection.x += MathUtils.random(-randomFactor, +randomFactor);
         }
 
+        //left border
         if(x <= borderStrength){
             float angle = ballDirection.angle(vecUp);
-            ballDirection.rotate(180 - angle);
+            ballDirection.rotate(180 + 2 * angle);
+            ballDirection.y += MathUtils.random(-randomFactor, +randomFactor);
         }
 
-        if(x >= width - borderStrength){
+        //right border
+        if(x + ballSize >= width - borderStrength){
             float angle = ballDirection.angle(vecUp);
-            ballDirection.rotate(180 + angle);
+            ballDirection.rotate(180 + 2 * angle);
+            ballDirection.y += MathUtils.random(-randomFactor, +randomFactor);
         }
 
+        //top border
         if(y + ballSize >= height - borderStrength){
-            float angle = ballDirection.angle(vecLeft);
-            ballDirection.rotate(180 + angle);
+            float angle = ballDirection.angle(vecRight);
+            ballDirection.rotate(180 + 2 * angle);
+            ballDirection.x += MathUtils.random(-randomFactor, +randomFactor);
         }
 
+        //game finish
         if(y < -ballSize){
-            Utils.sleepSeconds(2);
-            Breakout.setState(new Level1());
-            return;
+            depthFrameCounter = 1;
         }
 
         float newX = x + ballDirection.x * delta;

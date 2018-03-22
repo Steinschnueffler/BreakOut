@@ -23,18 +23,22 @@ public class Breakout extends ApplicationAdapter {
 		cam.position.set(cam.viewportWidth / 2f, cam.viewportHeight / 2f, 0);
 
 		state = new Level1();
+
+		Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+		Gdx.gl.glGenBuffer();
+		Gdx.gl.glUseProgram(0);
 	}
 
 	@Override
 	public void render() {
 		Gdx.gl.glClearColor(1, 1, 1, 1);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
 		cam.update();
 		batch.setProjectionMatrix(cam.combined);
 
 		batch.begin();
-		state.render(batch, cam, Gdx.graphics.getDeltaTime());
+		state.nextFrame(batch, cam, Gdx.graphics.getDeltaTime());
 		batch.end();
 		batch.flush();
 	}

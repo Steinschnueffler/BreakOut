@@ -14,9 +14,4 @@ public class Level1 extends RunningState {
     public Level1(){
         super(50, 250);
     }
-
-    @Override
-    public void render(SpriteBatch batch, Camera cam, float delta) {
-        super.render(batch, cam, delta);
-    }
 }

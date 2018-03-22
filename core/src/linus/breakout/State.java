@@ -11,7 +11,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
  * Created by Linus on 15.03.2018.
  */
 
-public abstract class State {
+public abstract class State{
 
     protected static final Graphics graphics = Gdx.graphics;
 
@@ -37,15 +37,23 @@ public abstract class State {
         backgroundSprite.setSize(width, height);
     }
 
-    public void render(SpriteBatch batch, Camera cam, float delta){
-        updateCam(cam);
-        backgroundSprite.draw(batch);
-   }
+    public void nextFrame(SpriteBatch batch, Camera cam, float delta){
+        update(cam, delta);
+        render(batch);
+    }
 
-   protected void updateCam(Camera cam){
+    public void update(Camera cam, float delta){
+        updateCam(cam);
+    }
+
+    protected void updateCam(Camera cam){
         cam.viewportWidth = width;
         cam.viewportHeight = height;
         cam.position.set(width / 2f, height / 2f, 0);
+    }
+
+    public void render(SpriteBatch batch){
+        backgroundSprite.draw(batch);
    }
 
 }
